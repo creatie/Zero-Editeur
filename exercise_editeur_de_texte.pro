@@ -1,8 +1,6 @@
 HEADERS += \
-    FenPrincipale.h \
-    MonTabWidget.h
+    FenPrincipale.h
 
 SOURCES += \
     FenPrincipale.cpp \
-    main.cpp \
-    MonTabWidget.cpp
+    main.cpp

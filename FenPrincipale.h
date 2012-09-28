@@ -30,22 +30,40 @@ public:
 public slots:
     void addOnglet();
     void changerPolice(QFont police);
-    void deleteOnglet(int index);
+    void supprimerOnglet(int index);
     void montrerAbout();
     void changerCurrTab(int index);
     void marquerChangement();
 
 private:
-    QTabWidget* m_zoneCentrale;
+    void creerMenu();
+    void creerActions();
+    void creerToolBars();
+    void creerMdi();
+    void creerStatusBar();
 
-    QTextEdit* m_currTextTab;
-    QFontComboBox* m_toolBarChoixPolice;
+    // Menu ----------------
+    QMenu* menuFichier;
+    QMenu* menuEdition;
+    QMenu* menuAffichage;
+    QMenu* menuAide;
+
+    // Actions -------------
+    QAction* actionNouvelOnglet;
+    QAction* actionOuvrir;
+    QAction* actionSauvegarder;
+    QAction* actionQuitter;
+    QAction* actionPreferences;
+    QAction* actionAbout;
+
+    // Toolbars ------------
     QToolBar* m_toolBarFichier;
 
-    int m_tabCount; // compte le nombre d'onglets ouverts
-    bool m_unsaved;
 
-    // actions
+    QTabWidget* m_zoneCentrale;
+    QTextEdit* m_currTextTab;
+    QFontComboBox* m_toolBarChoixPolice;
+    bool m_unsaved;
 
 };
 

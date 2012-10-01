@@ -27,9 +27,12 @@ contenuDock->setLayout(dockLayout);*/
 FenPrincipale::FenPrincipale() :
     QMainWindow(),
     m_zoneCentrale(new QTabWidget(this)),
-    m_currTextTab(0)
+    m_currTextTab(0),
+    m_lastIndex(-1)
 {
     this->resize(600, 480);
+    this->setWindowTitle("Zero Editeur");
+    this->setWindowIcon(QIcon("editor-icon.png"));
     this->setAnimated(true);
 
     // Création des menus --------------------------------------------
@@ -51,17 +54,26 @@ FenPrincipale::FenPrincipale() :
     /// Faire les connections ----------------------------------------
     connect(actionNouvelOnglet, SIGNAL(triggered()), this, SLOT(addOnglet()));
     connect(actionQuitter, SIGNAL(triggered()), qApp, SLOT(quit()));
+    connect(actionPreferences, SIGNAL(triggered()), this, SLOT(ouvrirPreferences()));
     connect(actionAbout, SIGNAL(triggered()), this, SLOT(montrerAbout()));
+    connect(actionSauvegarder, SIGNAL(triggered()), this, SLOT(sauvegarderFichier()));
 
     connect(m_zoneCentrale, SIGNAL(currentChanged(int)), this, SLOT(changerCurrTab(int)));
     connect(m_zoneCentrale, SIGNAL(tabCloseRequested(int)), this, SLOT(supprimerOnglet(int)));
 
-    connect(m_currTextTab, SIGNAL(textChanged()), this, SLOT(marquerChangement()));
+    //connect(m_zoneCentrale, SIGNAL(currentChanged(int)), this, SLOT(marquerChangement(int)));
 
     //connect(m_toolBarChoixPolice, SIGNAL(currentFontChanged(QFont)), this, SLOT(changerPolice(QFont)));
     /// --------------------------------------------------------------
 }
 
+void FenPrincipale::creerMenu()
+{
+    menuFichier = menuBar()->addMenu("&Fichier");
+    menuEdition = menuBar()->addMenu("&Edition");
+    menuAffichage = menuBar()->addMenu("&Affichage");
+    menuAide = menuBar()->addMenu("&Aide");
+}
 
 void FenPrincipale::creerActions()
 {
@@ -70,12 +82,24 @@ void FenPrincipale::creerActions()
     actionNouvelOnglet->setShortcut(QKeySequence("Ctrl+shift+N"));
     actionNouvelOnglet->setIcon(QIcon("tab-new.png"));
 
+    actionSauvegarder = menuFichier->addAction("&Sauvegarder");
+    actionSauvegarder->setShortcut(QKeySequence("Ctrl+S"));
+    actionSauvegarder->setIcon(QIcon("document-save.png"));
+    /// @todo actionSauvegarder->setDisabled(true);
+
+    actionSauvegarderComme = menuFichier->addAction("Sauvegarder comme ...");
+    actionSauvegarderComme->setShortcut(QKeySequence("Ctrl+shift+S"));
+    actionSauvegarderComme->setIcon(QIcon("document-save-as.png"));
+    /// @todo actionSauvegarderComme->setDisabled(true);
+
     actionQuitter = menuFichier->addAction("&Quitter");
     actionQuitter->setShortcut(QKeySequence("Ctrl+Q"));
     actionQuitter->setIcon(QIcon("quitter.png"));
 
     // Menu edition --------------------------------------------------
-
+    actionPreferences = menuEdition->addAction("&Preferences");
+    actionPreferences->setShortcut(QKeySequence("Ctrl+P"));
+    actionPreferences->setIcon(QIcon("preferences.png"));
 
     // Menu aide -----------------------------------------------------
     actionAbout = menuAide->addAction("About");
@@ -89,6 +113,8 @@ void FenPrincipale::creerToolBars()
     // ajoute les boutons à la barre d'outil "Fichier"
     //m_toolBarFichier->addAction(actionQuitter);
     m_toolBarFichier->addAction(actionNouvelOnglet);
+    m_toolBarFichier->addAction(actionSauvegarder);
+    m_toolBarFichier->addAction(actionSauvegarderComme);
     m_toolBarFichier->addSeparator();
     //m_toolBarFichier->addWidget(m_toolBarChoixPolice);
 }
@@ -97,13 +123,17 @@ void FenPrincipale::creerToolBars()
 void FenPrincipale::creerMdi()
 {
     m_zoneCentrale->setMovable(true);
+
     this->setCentralWidget(m_zoneCentrale);
 }
 
 
 void FenPrincipale::creerStatusBar()
 {
+    m_statusBar = new QStatusBar(this);
+    this->setStatusBar(m_statusBar);
 }
+
 
 
 
@@ -114,6 +144,7 @@ void FenPrincipale::creerStatusBar()
 void FenPrincipale::addOnglet()
 {
     m_zoneCentrale->addTab(new QTextEdit(m_zoneCentrale), QString("Nouvel onglet"));
+
     if( (! m_zoneCentrale->tabsClosable()) && (m_zoneCentrale->count() > 1) ){
         m_zoneCentrale->setTabsClosable(true);
     }
@@ -148,23 +179,71 @@ void FenPrincipale::montrerAbout()
 // Change le pointeur du onglet actif
 void FenPrincipale::changerCurrTab(int index)
 {
-    m_zoneCentrale->widget(index);
+    qDebug() << QString("Changement du pointeur de currTab");
+    if(m_zoneCentrale->widget(index)->isWindowModified()){ // if the current tab was modified
+        actionSauvegarder->setEnabled(true);
+        actionSauvegarderComme->setEnabled(true);
+    }
+    else{
+        actionSauvegarder->setDisabled(true);
+        actionSauvegarderComme->setDisabled(true);
+    }
+    m_currTextTab = dynamic_cast<QTextEdit*>( m_zoneCentrale->widget(index) );
 }
 
 
 //
-void FenPrincipale::marquerChangement()
+void FenPrincipale::marquerChangement(int index)
 {
-    m_zoneCentrale->setTabText(m_zoneCentrale->indexOf(m_currTextTab), QString("*"));
+    qDebug() << QString("Changement marqué\n");
+    m_zoneCentrale->setTabText(index, QString("*"));
 }
 
-void FenPrincipale::creerMenu()
+
+void FenPrincipale::ouvrirPreferences()
 {
-    menuFichier = menuBar()->addMenu("&Fichier");
-    menuEdition = menuBar()->addMenu("&Edition");
-    menuAffichage = menuBar()->addMenu("&Affichage");
-    menuAide = menuBar()->addMenu("&Aide");
+
+    QWidget optionsDialog;
+    optionsDialog.setWindowTitle("Preferences");
+    optionsDialog.setFixedSize(200, 300);
+    optionsDialog.setWindowIcon(QIcon("preferences.png"));
+
+    QPushButton boutonPolice(&optionsDialog);
+    QPushButton boutonCouleur(&optionsDialog);
+    QPushButton boutonOk(&optionsDialog);
+
+    QVBoxLayout layout_root;
+    layout_root.addWidget(&boutonPolice);
+    layout_root.addWidget(&boutonCouleur);
+    layout_root.addWidget(&boutonOk);
+
+    optionsDialog.setLayout(&layout_root);
+
+    optionsDialog.show();
+
 }
+
+void FenPrincipale::sauvegarderFichier()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Sauvegarder fichier"), "", tr("Texte (*.txt);;Tous formats (*)"));
+
+    if (fileName.isEmpty())
+        return;
+    else {
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly)) {
+            QMessageBox::information(this, tr("Unable to open file"), file.errorString());
+            return;
+        }
+        QTextStream out(&file);
+        ///out.setVersion(QDataStream::Qt_4_5);
+        QTextEdit* tempTextEdit = dynamic_cast<QTextEdit*> ( m_zoneCentrale->currentWidget() );
+        QString str = tempTextEdit->toPlainText();
+        out << tempTextEdit->toPlainText() ;
+    }
+}
+
+
 
 
 

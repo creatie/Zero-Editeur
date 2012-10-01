@@ -19,6 +19,15 @@
 #include <QTabWidget>
 #include <QFont>
 #include <QTabBar>
+#include <QStatusBar>
+#include <QDialog>
+#include <QFile>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QTextStream>
+#include <QDebug>
+
+#include "Editeur.h"
 
 
 class FenPrincipale : public QMainWindow
@@ -33,7 +42,9 @@ public slots:
     void supprimerOnglet(int index);
     void montrerAbout();
     void changerCurrTab(int index);
-    void marquerChangement();
+    void marquerChangement(int index);
+    void ouvrirPreferences();
+    void sauvegarderFichier();
 
 private:
     void creerMenu();
@@ -52,6 +63,7 @@ private:
     QAction* actionNouvelOnglet;
     QAction* actionOuvrir;
     QAction* actionSauvegarder;
+    QAction* actionSauvegarderComme;
     QAction* actionQuitter;
     QAction* actionPreferences;
     QAction* actionAbout;
@@ -59,11 +71,15 @@ private:
     // Toolbars ------------
     QToolBar* m_toolBarFichier;
 
+    // Statusbar -----------
+    QStatusBar* m_statusBar;
+
 
     QTabWidget* m_zoneCentrale;
     QTextEdit* m_currTextTab;
     QFontComboBox* m_toolBarChoixPolice;
     bool m_unsaved;
+    int m_lastIndex;
 
 };
 

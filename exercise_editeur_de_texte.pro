@@ -1,6 +1,8 @@
 HEADERS += \
-    FenPrincipale.h
+    FenPrincipale.h \
+    Editeur.h
 
 SOURCES += \
     FenPrincipale.cpp \
-    main.cpp
+    main.cpp \
+    Editeur.cpp
